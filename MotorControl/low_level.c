@@ -106,69 +106,6 @@ Motor_t motors[] = {
         },
         .timing_log_index = 0,
         .timing_log = {0}
-    },
-    {   // M1
-        .control_mode = CTRL_MODE_POSITION_CONTROL, //see: Motor_control_mode_t
-        .enable_step_dir = false, //auto enabled after calibration
-        .counts_per_step = 2.0f,
-        .error = ERROR_NO_ERROR,
-        .pos_setpoint = 0.0f,
-        .pos_gain = 20.0f, // [(counts/s) / counts]
-        .vel_setpoint = 0.0f,
-        .vel_gain = 15.0f / 10000.0f, // [A/(counts/s)]
-        .vel_integrator_gain = 10.0f / 10000.0f, // [A/(counts/s * s)]
-        .vel_integrator_current = 0.0f, // [A]
-        .vel_limit = 20000.0f, // [counts/s]
-        .current_setpoint = 0.0f, // [A]
-        .calibration_current = 10.0f, // [A]
-        .phase_inductance = 0.0f, // to be set by measure_phase_inductance
-        .phase_resistance = 0.0f, // to be set by measure_phase_resistance
-        .motor_thread = 0,
-        .thread_ready = false,
-        .enable_control = true,
-        .do_calibration = true,
-        .calibration_ok = false,
-        .motor_timer = &htim8,
-        .next_timings = {TIM_1_8_PERIOD_CLOCKS/2, TIM_1_8_PERIOD_CLOCKS/2, TIM_1_8_PERIOD_CLOCKS/2},
-        .control_deadline = (3*TIM_1_8_PERIOD_CLOCKS)/2,
-        .last_cpu_time = 0,
-        .current_meas = {0.0f, 0.0f},
-        .DC_calib = {0.0f, 0.0f},
-        .gate_driver = {
-            .spiHandle = &hspi3,
-            // Note: this board has the EN_Gate pin shared!
-            .EngpioHandle = EN_GATE_GPIO_Port,
-            .EngpioNumber = EN_GATE_Pin,
-            .nCSgpioHandle = M1_nCS_GPIO_Port,
-            .nCSgpioNumber = M1_nCS_Pin,
-            .RxTimeOut = false,
-            .enableTimeOut = false
-        },
-        // .gate_driver_regs Init by DRV8301_setup
-        .shunt_conductance = 1.0f/0.0005f, //[S]
-        .phase_current_rev_gain = 0.0f, // to be set by DRV8301_setup
-        .current_control = {
-            // .current_lim = 75.0f, //[A] // Note: consistent with 40v/v gain
-            .current_lim = 10.0f, //[A]
-            .p_gain = 0.0f, // [V/A] should be auto set after resistance and inductance measurement
-            .i_gain = 0.0f, // [V/As] should be auto set after resistance and inductance measurement
-            .v_current_control_integral_d = 0.0f,
-            .v_current_control_integral_q = 0.0f,
-            .Ibus = 0.0f
-        },
-        .rotor = {
-            .encoder_timer = &htim4,
-            .encoder_offset = 0,
-            .encoder_state = 0,
-            .motor_dir = 0, // set by calib_enc_offset
-            .phase = 0.0f,
-            .pll_pos = 0.0f, // [rad]
-            .pll_vel = 0.0f, // [rad/s]
-            .pll_kp = 0.0f, // [rad/s / rad]
-            .pll_ki = 0.0f // [(rad/s^2) / rad]
-        },
-        .timing_log_index = 0,
-        .timing_log = {0}
     }
 };
 const int num_motors = sizeof(motors)/sizeof(motors[0]);
@@ -219,34 +156,6 @@ float* exposed_floats[] = {
     &motors[0].rotor.pll_vel, // rw
     &motors[0].rotor.pll_kp, // rw
     &motors[0].rotor.pll_ki, // rw
-    &motors[1].pos_setpoint, // rw
-    &motors[1].pos_gain, // rw
-    &motors[1].vel_setpoint, // rw
-    &motors[1].vel_gain, // rw
-    &motors[1].vel_integrator_gain, // rw
-    &motors[1].vel_integrator_current, // rw
-    &motors[1].vel_limit, // rw
-    &motors[1].current_setpoint, // rw
-    &motors[1].calibration_current, // rw
-    &motors[1].phase_inductance, // ro
-    &motors[1].phase_resistance, // ro
-    &motors[1].current_meas.phB, // ro
-    &motors[1].current_meas.phC, // ro
-    &motors[1].DC_calib.phB, // rw
-    &motors[1].DC_calib.phC, // rw
-    &motors[1].shunt_conductance, // rw
-    &motors[1].phase_current_rev_gain, // rw
-    &motors[1].current_control.current_lim, // rw
-    &motors[1].current_control.p_gain, // rw
-    &motors[1].current_control.i_gain, // rw
-    &motors[1].current_control.v_current_control_integral_d, // rw
-    &motors[1].current_control.v_current_control_integral_q, // rw
-    &motors[1].current_control.Ibus, // ro
-    &motors[1].rotor.phase, // ro
-    &motors[1].rotor.pll_pos, // rw
-    &motors[1].rotor.pll_vel, // rw
-    &motors[1].rotor.pll_kp, // rw
-    &motors[1].rotor.pll_ki, // rw
 };
 
 int* exposed_ints[] = {
@@ -254,10 +163,6 @@ int* exposed_ints[] = {
     &motors[0].rotor.encoder_offset, // rw
     &motors[0].rotor.encoder_state, // ro
     &motors[0].error, // rw
-    (int*)&motors[1].control_mode, // rw
-    &motors[1].rotor.encoder_offset, // rw
-    &motors[1].rotor.encoder_state, // ro
-    &motors[1].error, // rw
 };
 
 bool* exposed_bools[] = {
@@ -265,17 +170,11 @@ bool* exposed_bools[] = {
     &motors[0].enable_control, // rw
     &motors[0].do_calibration, // rw
     &motors[0].calibration_ok, // ro
-    &motors[1].thread_ready, // ro
-    &motors[1].enable_control, // rw
-    &motors[1].do_calibration, // rw
-    &motors[1].calibration_ok, // ro
 };
 
 uint16_t* exposed_uint16[] = {
     &motors[0].control_deadline, // rw
     &motors[0].last_cpu_time, // ro
-    &motors[1].control_deadline, // rw
-    &motors[1].last_cpu_time, // ro
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -576,19 +475,19 @@ static void DRV8301_setup(Motor_t* motor) {
 static void start_adc_pwm(){
     // Enable ADC and interrupts
     __HAL_ADC_ENABLE(&hadc1);
-    __HAL_ADC_ENABLE(&hadc2);
-    __HAL_ADC_ENABLE(&hadc3);
+    // __HAL_ADC_ENABLE(&hadc2);
+    // __HAL_ADC_ENABLE(&hadc3);
     // Warp field stabilize.
     osDelay(2);
     __HAL_ADC_ENABLE_IT(&hadc1, ADC_IT_JEOC);
-    __HAL_ADC_ENABLE_IT(&hadc2, ADC_IT_JEOC);
-    __HAL_ADC_ENABLE_IT(&hadc3, ADC_IT_JEOC);
-    __HAL_ADC_ENABLE_IT(&hadc2, ADC_IT_EOC);
-    __HAL_ADC_ENABLE_IT(&hadc3, ADC_IT_EOC);
+    // __HAL_ADC_ENABLE_IT(&hadc2, ADC_IT_JEOC);
+    // __HAL_ADC_ENABLE_IT(&hadc3, ADC_IT_JEOC);
+    // __HAL_ADC_ENABLE_IT(&hadc2, ADC_IT_EOC);
+    // __HAL_ADC_ENABLE_IT(&hadc3, ADC_IT_EOC);
 
     // Ensure that debug halting of the core doesn't leave the motor PWM running
     __HAL_DBGMCU_FREEZE_TIM1();
-    __HAL_DBGMCU_FREEZE_TIM8();
+//    __HAL_DBGMCU_FREEZE_TIM8();
 
     start_pwm(&htim1);
     start_pwm(&htim8);
@@ -597,7 +496,7 @@ static void start_adc_pwm(){
 
     // Motor output starts in the disabled state
     __HAL_TIM_MOE_DISABLE_UNCONDITIONALLY(&htim1);
-    __HAL_TIM_MOE_DISABLE_UNCONDITIONALLY(&htim8);
+    //__HAL_TIM_MOE_DISABLE_UNCONDITIONALLY(&htim8);
 
     // Start brake resistor PWM in floating output configuration
     htim2.Instance->CCR3 = 0;
@@ -729,7 +628,7 @@ void pwm_trig_adc_cb(ADC_HandleTypeDef* hadc, bool injected) {
     // If we are counting down, we just sampled in SVM vector 7, with zero current
     Motor_t* motor = injected ? &motors[0] : &motors[1];
     bool counting_down = motor->motor_timer->Instance->CR1 & TIM_CR1_DIR;
-    
+
     bool current_meas_not_DC_CAL;
     if (motor == &motors[1] && counting_down) {
         // We are measuring M1 DC_CAL here
@@ -884,7 +783,7 @@ static bool measure_phase_inductance(Motor_t* motor, float voltage_low, float vo
     // However, the discretisation in the current control loop inverts the same discrepancy
     float dI_by_dt = (Ialphas[1] - Ialphas[0]) / (CURRENT_MEAS_PERIOD * (float)num_cycles);
     float L = v_L / dI_by_dt;
-    
+
     // TODO arbitrary values set for now
     if (L < 1e-6f || L > 500e-6f) {
         motor->error = ERROR_PHASE_INDUCTANCE_OUT_OF_RANGE;
@@ -972,7 +871,7 @@ static bool motor_calibration(Motor_t* motor){
         return false;
     if (!calib_enc_offset(motor, motor->calibration_current * motor->phase_resistance))
         return false;
-    
+
     // Calculate current control gains
     float current_control_bandwidth = 1000.0f; // [rad/s]
     motor->current_control.p_gain = current_control_bandwidth * motor->phase_inductance;
@@ -989,7 +888,7 @@ static bool motor_calibration(Motor_t* motor){
     }
     // Critically damped
     motor->rotor.pll_ki = 0.25f * (motor->rotor.pll_kp * motor->rotor.pll_kp);
-    
+
     motor->calibration_ok = true;
     return true;
 }
@@ -1262,7 +1161,7 @@ void motor_thread(void const * argument) {
             }
             motor->do_calibration = false;
         }
-        
+
         if (motor->calibration_ok && motor->enable_control) {
             motor->enable_step_dir = true;
             __HAL_TIM_MOE_ENABLE(motor->motor_timer);
@@ -1274,7 +1173,7 @@ void motor_thread(void const * argument) {
                 motor->enable_control = false;
             }
         }
-        
+
         queue_voltage_timings(motor, 0.0f, 0.0f);
         osDelay(100);
     }

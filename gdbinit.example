@@ -1,0 +1,4 @@
+file "build/ODriveFirmware.elf"
+target extended-remote /dev/cu.usbmodemE2BCB5B1
+monitor swdp_scan
+attach 1

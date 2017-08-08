@@ -49,7 +49,6 @@ C_SOURCES = \
   Src/freertos.c \
   Src/spi.c \
   Src/stm32f4xx_hal_msp.c \
-  Src/can.c \
   Src/usbd_conf.c \
   Src/usbd_desc.c \
   Src/usb_device.c \
@@ -78,7 +77,7 @@ C_SOURCES = \
   Src/usbd_cdc_if.c \
   Src/syscalls.c \
   MotorControl/utils.c \
-  MotorControl/low_level.c  
+  MotorControl/low_level.c
 ASM_SOURCES = \
   startup/startup_stm32f405xx.s
 
@@ -92,13 +91,13 @@ AR = arm-none-eabi-ar
 SZ = arm-none-eabi-size
 HEX = $(CP) -O ihex
 BIN = $(CP) -O binary -S
- 
+
 #######################################
 # CFLAGS
 #######################################
 # macros for gcc
 AS_DEFS =
-C_DEFS = -D__weak="__attribute__((weak))" -D__packed="__attribute__((__packed__))" -DUSE_HAL_DRIVER -DSTM32F405xx
+C_DEFS = -D__weak="__attribute__((weak))" -D__packed="__attribute__((__packed__))" -DUSE_HAL_DRIVER -DSTM32F401xC
 # includes for gcc
 AS_INCLUDES =
 C_INCLUDES = -IMiddlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F
@@ -126,7 +125,7 @@ CFLAGS += -std=c99 -MD -MP -MF .dep/$(@F).d
 # LDFLAGS
 #######################################
 # link script
-LDSCRIPT = STM32F405RGTx_FLASH.ld
+LDSCRIPT = STM32F401VCTx_FLASH.ld
 # libraries
 LIBS = -lc -lm -lnosys -larm_cortexM4lf_math
 LIBDIR = -LDrivers/CMSIS/Lib
@@ -145,7 +144,7 @@ vpath %.c $(sort $(dir $(C_SOURCES)))
 OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(ASM_SOURCES:.s=.o)))
 vpath %.s $(sort $(dir $(ASM_SOURCES)))
 
-$(BUILD_DIR)/%.o: %.c Makefile | $(BUILD_DIR) 
+$(BUILD_DIR)/%.o: %.c Makefile | $(BUILD_DIR)
 	@$(CC) -c $(CFLAGS) -Wa,-a,-ad,-alms=$(BUILD_DIR)/$(notdir $(<:.c=.lst)) $< -o $@
 
 $(BUILD_DIR)/%.o: %.s Makefile | $(BUILD_DIR)
@@ -157,10 +156,10 @@ $(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) Makefile
 
 $(BUILD_DIR)/%.hex: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
 	@$(HEX) $< $@
-	
+
 $(BUILD_DIR)/%.bin: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
 	@$(BIN) $< $@
-	
+
 $(BUILD_DIR):
 	mkdir -p $@
 
@@ -178,7 +177,7 @@ flash: $(BUILD_DIR)/$(TARGET).elf
 	openocd -f interface/stlink-v2.cfg -f target/stm32f4x.cfg -c init -c reset\ halt -c flash\ write_image\ erase\ $(BUILD_DIR)/$(TARGET).elf -c reset\ run -c exit
 
 gdb: $(BUILD_DIR)/$(TARGET).elf
-	arm-none-eabi-gdb $(BUILD_DIR)/$(TARGET).elf -x openocd.gdbinit
+	arm-none-eabi-gdb
 
 bmp: $(BUILD_DIR)/$(TARGET).elf
 	arm-none-eabi-gdb --ex 'target extended-remote /dev/stlink' \
